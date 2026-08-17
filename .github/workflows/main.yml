@@ -1,25 +1,67 @@
-name: Download Iraq Map
+name: Build Iraq MBTiles
 
 on:
   workflow_dispatch:
 
 jobs:
-  download:
+
+  build-map:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download Iraq OSM data
+
+      - name: Download Iraq OSM
         run: |
           wget -O iraq.osm.pbf \
           https://download.geofabrik.de/asia/iraq-latest.osm.pbf
 
-      - name: Show file size
+      - name: Install tilemaker
         run: |
-          ls -lh iraq.osm.pbf
+          wget -O tilemaker.tar.gz \
+          https://github.com/systemed/tilemaker/releases/latest/download/tilemaker-linux-x86_64.tar.gz
 
-      - name: Upload map data
+          tar -xzf tilemaker.tar.gz
+
+          sudo cp tilemaker /usr/local/bin/tilemaker
+
+          tilemaker --help
+
+      - name: Create map configuration
+        run: |
+
+          cat > config.json <<'EOF'
+          {
+            "layers": {
+              "roads": {
+                "minzoom": 6,
+                "maxzoom": 14
+              },
+              "places": {
+                "minzoom": 6,
+                "maxzoom": 14
+              }
+            }
+          }
+          EOF
+
+      - name: Build MBTiles
+        run: |
+          tilemaker \
+          --input iraq.osm.pbf \
+          --output iraq.mbtiles \
+          --config config.json
+
+      - name: Check result
+        run: |
+          ls -lh iraq.mbtiles
+
+      - name: Upload MBTiles
         uses: actions/upload-artifact@v4
+
         with:
-          name: iraq-osm
-          path: iraq.osm.pbf
+          name: iraq-mbtiles
+
+          path: iraq.mbtiles
+
           retention-days: 7
