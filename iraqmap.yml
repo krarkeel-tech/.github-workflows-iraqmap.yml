@@ -1,0 +1,25 @@
+name: Download Iraq Map
+
+on:
+  workflow_dispatch:
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Iraq OSM data
+        run: |
+          wget -O iraq.osm.pbf \
+          https://download.geofabrik.de/asia/iraq-latest.osm.pbf
+
+      - name: Show file size
+        run: |
+          ls -lh iraq.osm.pbf
+
+      - name: Upload map data
+        uses: actions/upload-artifact@v4
+        with:
+          name: iraq-osm
+          path: iraq.osm.pbf
+          retention-days: 7
